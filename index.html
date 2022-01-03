@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>慢播</title>
+    <style>
+        body,h3{
+            margin: 0;
+            padding: 0;
+        }
+        button{
+            padding: 0;
+            border: none;
+            outline: none;
+        }
+        #player{
+            width: 100%;
+        }
+        #player h3{
+            width: 100%;
+            font-size: 24px;
+            line-height: 1.8;
+            text-align: center;
+            background-color: rgb(231,232,234);
+        }
+        #player .video-con{
+            width: 100%;
+            background-color: black;
+
+        }
+        #player .video-con video{
+            height: 100%;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #player .controls{
+            box-sizing: border-box;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: rgb(231,232,234);
+        }
+        #player .controls .play{
+            float: left;
+            width: 45px;
+            height: 45px;
+            background: url("./images/play.png");
+            background-size: cover;
+        }
+        #player .controls .volume{
+            float: left;
+            width: 45px;
+            height: 45px;
+
+        }
+        #player .controls .volume .volumeBtn{
+            width: 45px;
+            height: 45px;
+            background: url("./images/volume-max.png");
+            background-size: cover;
+        }
+        #player .controls .progress{
+            float: left;
+            width: 60%;
+            height: 18px;
+            border-radius: 9px;
+            background: linear-gradient(0.4turn, #3f87a6 0%, #3f87a6 0%, #ebf8e1 0%, #f69d3c 100%);
+        }
+        #player .controls .open-file{
+            float: left;
+            width: 45px;
+            height: 45px;
+            background: url("./images/open.png");
+            background-size: cover;
+        }
+        #player .controls .open-file input{
+            width: 45px;
+            height: 45px;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="player">
+        <h3 class="title">点击上传视频播放 .mp4</h3>
+        <div class="video-con">
+            <video src="./video/想起了你，是想起那样一个夏天.mp4"></video>
+        </div>
+        <div class="controls">
+            <button class="play"></button>
+            <div class="volume">
+                <button class="volumeBtn"></button>
+                <div class="volumeBar"></div>
+            </div>
+            <div class="progress"></div>
+            <div class="open-file">
+                <input type="file" id="fileInput">
+            </div>
+        </div>
+    </div>
+    <script>
+        let videoCon = document.querySelector('#player .video-con');
+        ~function (){
+            videoCon.style.height = (window.innerWidth * 9) /16 + 'px';
+            if (!window.onresize){
+                window.onresize = arguments.callee;
+            }
+        }()
+        let myVideo = document.querySelector('#player .video-con video'); // 获取媒体元素
+        let playBtn = document.querySelector('#player .controls .play');  // 获取播放按钮
+
+        // 先定义一个开关
+        let playState = 'off'; //视频的播放状态，默认是关闭状态
+
+        playBtn.onclick = function () {
+            // if (playState === 'off') {
+            //
+            // }else {
+            //
+            // }
+            // 播放按钮，暂停按钮
+            switch (playState){
+                case "off":
+                    myVideo.play();
+                    playState = 'on';
+                    playBtn.style.backgroundImage = "url('./images/pause.png')"
+                    break;
+                case 'on':
+                    myVideo.pause();
+                    playState = 'off';
+                    playBtn.style.backgroundImage = "url('./images/play.png')"
+                    break;
+            }
+        }
+        // 进度条
+        // 视频当前播放时间 / 视频总时长
+        let objProgress = document.querySelector('#player .controls .progress');
+        myVideo.addEventListener('timeupdate', function () {
+            // 得到视频的总时间
+            let totalTime = this.duration;
+            // 得到视频的当前播放时间
+            let nowTime = this.currentTime;
+            // 比例
+            let rate = (nowTime*100/totalTime) + '%';
+            objProgress.style.backgroundImage = `linear-gradient(0.4turn, #3f87a6, #3f87a6 0%, #ebf8e1 ${rate}, #f69d3c ${rate})`
+        });
+
+        objProgress.addEventListener('mousedown', setProgress);
+        objProgress.addEventListener('mousemove', setProgress);
+        objProgress.addEventListener('mouseup', setProgress);
+
+        // 进度条
+        let toggle = false;
+        function setProgress(ev) {
+            switch (ev.type){
+                case "mousedown":
+                    toggle = true;
+                    myVideo.currentTime = myVideo.duration * (ev.offsetX/objProgress.clientWidth);
+                    break;
+                case 'mousemove':
+                    if (toggle) {
+                        myVideo.currentTime = myVideo.duration * (ev.offsetX/objProgress.clientWidth);
+                    }
+                    break;
+                case 'mouseup':
+                    toggle = false;
+                    break;
+            }
+        }
+
+        // 文件操作
+        let openFile = document.querySelector('#fileInput');
+        let videoTitle = document.querySelector('.title');
+        openFile.onchange = function () {
+            let currentSelectVideoFile = this; // 获取当前选中的视频文件
+            videoTitle.innerText = currentSelectVideoFile.files[0].name; // 获取选中视频文件的名称
+            // 获取地址
+            let videoUrl = window.URL.createObjectURL(currentSelectVideoFile.files[0]);
+            myVideo.setAttribute('src',videoUrl);
+            objProgress.style.backgroundImage = `linear-gradient(0.4turn, #3f87a6, #3f87a6 0%, #ebf8e1 ${0}, #f69d3c ${0})`
+            playState = 'off';
+            playBtn.style.backgroundImage = "url('./images/play.png')"
+        }
+
+        // 点击视频区域播放
+        myVideo.onclick = function () {
+            switch (playState){
+                case "off":
+                    myVideo.play();
+                    playState = 'on';
+                    playBtn.style.backgroundImage = "url('./images/pause.png')"
+                    break;
+                case 'on':
+                    myVideo.pause();
+                    playState = 'off';
+                    playBtn.style.backgroundImage = "url('./images/play.png')"
+                    break;
+            }
+        }
+    </script>
+</body>
+</html>
